@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: docker-configs/Dockerfile
     
-    container_name: opencode_workspace
+    container_name: opencode_workspace_vhss
     image: opencode-sandbox:latest
     
     # ========== VOLUME DO PROJETO (Isolamento) ==========

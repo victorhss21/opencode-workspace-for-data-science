@@ -1,0 +1,54 @@
+name: cd-model
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'model-v*'
+
+jobs:
+  package-model:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run tests before release
+        run: uv run pytest
+
+      - name: Train model with MLflow
+        env:
+          MLFLOW_TRACKING_URI: ${{ vars.MLFLOW_TRACKING_URI }}
+          MLFLOW_REGISTRY_URI: ${{ vars.MLFLOW_REGISTRY_URI }}
+          MLFLOW_EXPERIMENT_NAME: release-training
+          MLFLOW_MODEL_NAME: meu-projeto-ds-model
+        run: uv run python -m meu_projeto_ds.models.train
+
+      - name: Build package
+        run: uv build
+
+      - name: Archive MLflow runs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-runs
+          path: mlruns/
+          if-no-files-found: ignore
+
+      - name: Archive dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: dist/
